@@ -50,35 +50,108 @@ This starts PostgreSQL, Redis and the API, applies the database migrations and c
 
 Log in at `POST /auth/login` with the super admin from `.env` (`SUPER_ADMIN_USER_NAME`, `SUPER_ADMIN_PASSWORD`). Change the secrets and the super admin password in `.env` before using it anywhere other than your own machine.
 
-## Using this template
+## Installation
 
-Click **Use this template** on GitHub, or clone it as above. Then rename the project:
+Use this guide to start a new project from the starter. The quick start above is only for trying it out.
 
-| What                   | Where                                                               |
-| ---------------------- | ------------------------------------------------------------------- |
-| Package name           | `name` and `description` in `package.json`                          |
-| Compose project        | `name` and every `container_name` / `image` in `docker-compose.yml` |
-| Database name and user | `POSTGRES_*` and `DATABASE_URL` in `.env.example`                   |
-| API docs title         | `setTitle` and `setDescription` in `src/main.ts`                    |
-| Docs and license       | This README, `docs/`, and the copyright line in `LICENSE`           |
+### 1. Requirements
 
-Run `yarn install` afterwards so `yarn.lock` picks up the new package name.
+- Node.js 24 (with [nvm](https://github.com/nvm-sh/nvm): `nvm install 24`)
+- Corepack, which ships with Node and provides Yarn 4: `corepack enable`
+- Docker with Compose
 
-## Development
+### 2. Create your project
 
-To run the API on your machine with hot reload, you need Node.js 24 and Corepack for Yarn 4. The full guide is in [docs/local-setup.md](docs/local-setup.md).
+Click **Use this template** on GitHub to create a new repository, then clone it:
+
+```bash
+git clone git@github.com:<you>/<your-project>.git
+cd <your-project>
+```
+
+Or copy the starter without its git history:
+
+```bash
+git clone --depth 1 https://github.com/Apu-Emdad/nestjs-starter-pack.git <your-project>
+cd <your-project>
+rm -rf .git && git init -b main
+```
+
+### 3. Rename the project
+
+| What                   | Where                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| Package name           | `name` and `description` in `package.json`                                                     |
+| Compose project        | `name` and every `container_name` / `image` in `docker-compose.yml`                            |
+| Database name and user | `POSTGRES_*` and `DATABASE_URL` in `.env.example`                                              |
+| Ports                  | `PORT`, `POSTGRES_PORT` and `REDIS_PORT` in `.env.example`, if they clash with another project |
+| API docs title         | `setTitle` and `setDescription` in `src/main.ts`                                               |
+| Docs and license       | This README, `docs/`, and the copyright line in `LICENSE`                                      |
+
+### 4. Install dependencies
 
 ```bash
 nvm use
 yarn install
+```
+
+`yarn install` also updates `yarn.lock` with the new package name.
+
+### 5. Configure the environment
+
+```bash
 cp .env.example .env
+```
+
+Then edit `.env`:
+
+- **JWT secrets:** set `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` to two different random values of at least 32 characters. Generate each one with `openssl rand -base64 48`.
+- **Super admin:** set `SUPER_ADMIN_USER_NAME`, `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` (8 to 128 characters). The seed creates this user in step 7.
+- **Web app origin:** set `WEB_ORIGIN` to your frontend's URL, so CORS lets it send the refresh cookie.
+- **Database:** if you change `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` or `POSTGRES_PORT`, update `DATABASE_URL` to match.
+
+The app checks `.env` on startup and exits with a list of the missing or invalid variables.
+
+### 6. Start PostgreSQL and Redis
+
+```bash
 docker compose up -d --wait postgres redis
+```
+
+### 7. Set up the database
+
+```bash
 yarn migrate:deploy
 yarn db:seed
+```
+
+- `yarn migrate:deploy` creates the tables and the `USER` and `SUPER_ADMIN` roles.
+- `yarn db:seed` creates the super admin from `.env`. It skips the user if the user name or email already exists, so it is safe to run again.
+
+### 8. Run the API
+
+```bash
 yarn dev
 ```
 
-### Scripts
+Open `http://localhost:3000/docs` and log in at `POST /auth/login` with the super admin's user name and password.
+
+### 9. Commit your starting point
+
+```bash
+git add -A
+git commit -m "chore: start from nestjs-starter-pack"
+```
+
+### Next steps
+
+- **Add a module:** `yarn nest g resource modules/<name>`, then follow the patterns in `src/modules/users` (services return a `Result`, controllers send it with `res.status(result.status).json(result)`).
+- **Add a table:** see [Adding a table](docs/schema.md#adding-a-table).
+- **Run everything in Docker:** `docker compose up --build` runs migrations, the seed and the API in containers. Stop `yarn dev` first, since both use `PORT`.
+
+More detail on services, ports and connecting a database client is in [docs/local-setup.md](docs/local-setup.md).
+
+## Scripts
 
 | Command               | What it does                                           |
 | --------------------- | ------------------------------------------------------ |

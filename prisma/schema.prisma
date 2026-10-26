@@ -33,7 +33,56 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  roleInfo Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  roleInfo     Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  employeeInfo Employee?
 
   @@map("users")
+}
+
+enum Department {
+  ENGINEERING
+  DESIGN
+  SALES
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+model Team {
+  id         BigInt     @id @default(autoincrement())
+  uid        String     @unique @default(dbgenerated("generate_uid()"))
+  name       String     @unique
+  department Department
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  employees Employee[]
+
+  @@index([department])
+  @@map("teams")
+}
+
+model Employee {
+  id             BigInt         @id @default(autoincrement())
+  uid            String         @unique @default(dbgenerated("generate_uid()"))
+  userId         BigInt         @unique @map("user_id")
+  teamId         BigInt         @map("team_id")
+  fullName       String         @map("full_name")
+  bio            String?
+  salary         Int
+  skills         String[]
+  employmentType EmploymentType @map("employment_type")
+  joinDate       DateTime       @map("join_date") @db.Date
+  isRemote       Boolean        @default(false) @map("is_remote")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  userInfo User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamInfo Team @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  @@index([teamId])
+  @@map("employees")
 }

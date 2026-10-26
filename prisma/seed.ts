@@ -1,69 +1,181 @@
 /**
  * Seed script
  *
- * Creates the first super admin from SUPER_ADMIN_USER_NAME, SUPER_ADMIN_EMAIL and
- * SUPER_ADMIN_PASSWORD in .env. Safe to run again: it does nothing if a user with
- * that user name or email already exists. Run it with `yarn db:seed`.
+ * Creates the roles the app needs, the example teams and employees, then the first super admin (user name "admin", email
+ * "admin@example.com", password "12345678"). Safe to run again: it creates only what is
+ * missing. Run it with `yarn db:seed`.
  */
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as argon2 from 'argon2';
+import dayjs from 'dayjs';
 import { ROLE } from '../src/common/constants/roles.js';
 import { PrismaClient } from '../src/generated/prisma/client.js';
+import { Department, EmploymentType } from '../src/generated/prisma/enums.js';
+
+const SUPER_ADMIN_USER_NAME = 'admin';
+const SUPER_ADMIN_EMAIL = 'admin@example.com';
+const SUPER_ADMIN_PASSWORD = '12345678';
+
+const TEAMS = [
+  { name: 'Frontend', department: Department.ENGINEERING },
+  { name: 'Backend', department: Department.ENGINEERING },
+  { name: 'Platform', department: Department.ENGINEERING },
+  { name: 'Product design', department: Department.DESIGN },
+  { name: 'Brand', department: Department.DESIGN },
+  { name: 'Inbound sales', department: Department.SALES },
+  { name: 'Outbound sales', department: Department.SALES },
+];
+
+const SKILLS = {
+  [Department.ENGINEERING]: ['React', 'Node', 'TypeScript', 'SQL', 'Docker'],
+  [Department.DESIGN]: ['Figma', 'Branding', 'UX research', 'Illustration'],
+  [Department.SALES]: ['Negotiation', 'CRM', 'Outreach', 'Presentations'],
+};
 
 async function main() {
-  // 1. reading and checking the env values (same rules as register)
-  const userName = process.env.SUPER_ADMIN_USER_NAME?.trim().toLowerCase();
-  const email = process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.SUPER_ADMIN_PASSWORD;
-
-  if (!userName || !email || !password) {
-    throw new Error(
-      'Set SUPER_ADMIN_USER_NAME, SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD in .env',
-    );
-  }
-  if (!/^[a-z0-9_-]{3,30}$/.test(userName)) {
-    throw new Error(
-      'SUPER_ADMIN_USER_NAME must be 3 to 30 characters: a-z, 0-9, _ and -',
-    );
-  }
-  if (password.length < 8 || password.length > 128) {
-    throw new Error('SUPER_ADMIN_PASSWORD must be 8 to 128 characters');
-  }
-
   const prisma = new PrismaClient({
     adapter: new PrismaPg(process.env.DATABASE_URL ?? ''),
   });
 
   try {
-    // 2. skipping when the user already exists
+    // 1. creating the roles
+    for (const name of Object.values(ROLE)) {
+      await prisma.role.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      });
+    }
+
+    // 2. creating the example teams
+    const teams = [];
+    for (const team of TEAMS) {
+      teams.push(
+        await prisma.team.upsert({
+          where: { name: team.name },
+          update: {},
+          create: team,
+        }),
+      );
+    }
+
+    // 3. creating the example employees
+    const passwordHash = await argon2.hash(SUPER_ADMIN_PASSWORD);
+    const employmentTypes = Object.values(EmploymentType);
+
+    for (const [i, fullName] of EMPLOYEE_NAMES.entries()) {
+      const [first, last] = fullName.split(' ');
+      const userName = `${first}_${last}`.toLowerCase();
+      const team = teams[i % teams.length];
+      const skills = SKILLS[team.department];
+
+      const user = await prisma.user.findUnique({
+        where: { userName },
+        select: { id: true },
+      });
+
+      if (user) continue;
+
+      await prisma.employee.create({
+        data: {
+          fullName,
+          bio: i % 2 === 0 ? `${team.name} team member.` : null,
+          salary: 2500 + (i % 14) * 450,
+          skills: [skills[i % skills.length], skills[(i + 1) % skills.length]],
+          employmentType: employmentTypes[i % employmentTypes.length],
+          joinDate: new Date(
+            dayjs()
+              .subtract(15 + i * 27, 'day')
+              .format('YYYY-MM-DD'),
+          ),
+          isRemote: i % 3 === 0,
+          teamInfo: { connect: { id: team.id } },
+          userInfo: {
+            create: {
+              userName,
+              email: `${first}.${last}@example.com`.toLowerCase(),
+              passwordHash,
+              roleInfo: { connect: { name: ROLE.USER } },
+            },
+          },
+        },
+      });
+    }
+
+    // 4. skipping the super admin when the user already exists
     const existing = await prisma.user.findFirst({
-      where: { OR: [{ userName }, { email }] },
+      where: {
+        OR: [{ userName: SUPER_ADMIN_USER_NAME }, { email: SUPER_ADMIN_EMAIL }],
+      },
       select: { uid: true },
     });
 
     if (existing) {
       console.log(
-        `Super admin seed skipped: "${userName}" or "${email}" exists`,
+        `Super admin seed skipped: "${SUPER_ADMIN_USER_NAME}" or "${SUPER_ADMIN_EMAIL}" exists`,
       );
       return;
     }
 
-    // 3. creating the super admin
+    // 5. creating the super admin
     await prisma.user.create({
       data: {
-        userName,
-        email,
-        passwordHash: await argon2.hash(password),
+        userName: SUPER_ADMIN_USER_NAME,
+        email: SUPER_ADMIN_EMAIL,
+        passwordHash: await argon2.hash(SUPER_ADMIN_PASSWORD),
         roleInfo: { connect: { name: ROLE.SUPER_ADMIN } },
       },
     });
 
-    console.log(`Super admin "${userName}" created`);
+    console.log(`Super admin "${SUPER_ADMIN_USER_NAME}" created`);
   } finally {
     await prisma.$disconnect();
   }
 }
+
+const EMPLOYEE_NAMES = [
+  'Maya Rodriguez',
+  'Arjun Patel',
+  'Sofia Nguyen',
+  'Liam Okafor',
+  'Aisha Silva',
+  'Noah Khan',
+  'Mei Berg',
+  'Omar Costa',
+  'Elena Ahmed',
+  'Kai Moreau',
+  'Zara Tanaka',
+  'Ravi Ivanov',
+  'Nina Haddad',
+  'Leo Rossi',
+  'Hana Kim',
+  'Sam Novak',
+  'Ivy Santos',
+  'Tariq Cohen',
+  'Lucia Dubois',
+  'Ethan Walker',
+  'Maya Khan',
+  'Arjun Berg',
+  'Sofia Costa',
+  'Liam Ahmed',
+  'Aisha Moreau',
+  'Noah Tanaka',
+  'Mei Ivanov',
+  'Omar Haddad',
+  'Elena Rossi',
+  'Kai Kim',
+  'Zara Novak',
+  'Ravi Santos',
+  'Nina Cohen',
+  'Leo Dubois',
+  'Hana Walker',
+  'Sam Rodriguez',
+  'Ivy Patel',
+  'Tariq Nguyen',
+  'Lucia Okafor',
+  'Ethan Silva',
+];
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);

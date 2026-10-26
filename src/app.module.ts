@@ -9,6 +9,8 @@ import { HealthController } from './health/health.controller.js';
 import { AuthGuard } from './modules/auth/auth.guard.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { RolesGuard } from './modules/auth/roles.guard.js';
+import { EmployeesModule } from './modules/employees/employees.module.js';
+import { TeamsModule } from './modules/teams/teams.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
@@ -25,6 +27,8 @@ import { RedisModule } from './redis/redis.module.js';
     ErrorLoggerModule,
     AuthModule,
     UsersModule,
+    TeamsModule,
+    EmployeesModule,
   ],
   controllers: [HealthController],
   providers: [

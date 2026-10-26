@@ -40,7 +40,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts PostgreSQL, Redis and the API, applies the database migrations and creates the first super admin from `.env`. Press Ctrl+C to stop everything.
+This starts PostgreSQL, Redis and the API, applies the database migrations and creates the first super admin: user name `admin`, password `12345678`. Press Ctrl+C to stop everything.
 
 |                    | URL                            |
 | ------------------ | ------------------------------ |
@@ -48,7 +48,7 @@ This starts PostgreSQL, Redis and the API, applies the database migrations and c
 | API docs (Swagger) | `http://localhost:3000/docs`   |
 | Health check       | `http://localhost:3000/health` |
 
-Log in at `POST /auth/login` with the super admin from `.env` (`SUPER_ADMIN_USER_NAME`, `SUPER_ADMIN_PASSWORD`). Change the secrets and the super admin password in `.env` before using it anywhere other than your own machine.
+Log in at `POST /auth/login` as `admin` with the password `12345678`. Change the secrets in `.env` and the super admin password before using it anywhere other than your own machine.
 
 ## Installation
 
@@ -106,7 +106,6 @@ cp .env.example .env
 Then edit `.env`:
 
 - **JWT secrets:** set `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` to two different random values of at least 32 characters. Generate each one with `openssl rand -base64 48`.
-- **Super admin:** set `SUPER_ADMIN_USER_NAME`, `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` (8 to 128 characters). The seed creates this user in step 7.
 - **Web app origin:** set `WEB_ORIGIN` to your frontend's URL, so CORS lets it send the refresh cookie.
 - **Database:** if you change `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` or `POSTGRES_PORT`, update `DATABASE_URL` to match.
 
@@ -126,7 +125,7 @@ yarn db:seed
 ```
 
 - `yarn migrate:deploy` creates the tables and the `USER` and `SUPER_ADMIN` roles.
-- `yarn db:seed` creates the super admin from `.env`. It skips the user if the user name or email already exists, so it is safe to run again.
+- `yarn db:seed` creates the super admin `admin` with the password `12345678`. It skips the user if the user name or email already exists, so it is safe to run again. Change the password after the first login.
 
 ### 8. Run the API
 
@@ -134,7 +133,7 @@ yarn db:seed
 yarn dev
 ```
 
-Open `http://localhost:3000/docs` and log in at `POST /auth/login` with the super admin's user name and password.
+Open `http://localhost:3000/docs` and log in at `POST /auth/login` as `admin` with the password `12345678`.
 
 ### 9. Commit your starting point
 
@@ -165,6 +164,7 @@ More detail on services, ports and connecting a database client is in [docs/loca
 | `yarn migrate:dev`    | Create and apply a migration after changing the schema |
 | `yarn migrate:deploy` | Apply pending migrations                               |
 | `yarn db:seed`        | Create the first super admin                           |
+| `yarn docker:deps`    | Start PostgreSQL and Redis, apply migrations and seed  |
 
 ## API
 

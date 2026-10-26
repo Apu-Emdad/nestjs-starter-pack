@@ -27,51 +27,6 @@ const TEAMS = [
   { name: 'Outbound sales', department: Department.SALES },
 ];
 
-const EMPLOYEE_COUNT = 40;
-const FIRST_NAMES = [
-  'Maya',
-  'Arjun',
-  'Sofia',
-  'Liam',
-  'Aisha',
-  'Noah',
-  'Mei',
-  'Omar',
-  'Elena',
-  'Kai',
-  'Zara',
-  'Ravi',
-  'Nina',
-  'Leo',
-  'Hana',
-  'Sam',
-  'Ivy',
-  'Tariq',
-  'Lucia',
-  'Ethan',
-];
-const LAST_NAMES = [
-  'Rodriguez',
-  'Patel',
-  'Nguyen',
-  'Okafor',
-  'Silva',
-  'Khan',
-  'Berg',
-  'Costa',
-  'Ahmed',
-  'Moreau',
-  'Tanaka',
-  'Ivanov',
-  'Haddad',
-  'Rossi',
-  'Kim',
-  'Novak',
-  'Santos',
-  'Cohen',
-  'Dubois',
-  'Walker',
-];
 const SKILLS = {
   [Department.ENGINEERING]: ['React', 'Node', 'TypeScript', 'SQL', 'Docker'],
   [Department.DESIGN]: ['Figma', 'Branding', 'UX research', 'Illustration'],
@@ -109,9 +64,8 @@ async function main() {
     const passwordHash = await argon2.hash(SUPER_ADMIN_PASSWORD);
     const employmentTypes = Object.values(EmploymentType);
 
-    for (let i = 0; i < EMPLOYEE_COUNT; i++) {
-      const first = FIRST_NAMES[i % FIRST_NAMES.length];
-      const last = LAST_NAMES[(i + 5 * Math.floor(i / 20)) % LAST_NAMES.length];
+    for (const [i, fullName] of EMPLOYEE_NAMES.entries()) {
+      const [first, last] = fullName.split(' ');
       const userName = `${first}_${last}`.toLowerCase();
       const team = teams[i % teams.length];
       const skills = SKILLS[team.department];
@@ -125,7 +79,7 @@ async function main() {
 
       await prisma.employee.create({
         data: {
-          fullName: `${first} ${last}`,
+          fullName,
           bio: i % 2 === 0 ? `${team.name} team member.` : null,
           salary: 2500 + (i % 14) * 450,
           skills: [skills[i % skills.length], skills[(i + 1) % skills.length]],
@@ -179,6 +133,49 @@ async function main() {
     await prisma.$disconnect();
   }
 }
+
+const EMPLOYEE_NAMES = [
+  'Maya Rodriguez',
+  'Arjun Patel',
+  'Sofia Nguyen',
+  'Liam Okafor',
+  'Aisha Silva',
+  'Noah Khan',
+  'Mei Berg',
+  'Omar Costa',
+  'Elena Ahmed',
+  'Kai Moreau',
+  'Zara Tanaka',
+  'Ravi Ivanov',
+  'Nina Haddad',
+  'Leo Rossi',
+  'Hana Kim',
+  'Sam Novak',
+  'Ivy Santos',
+  'Tariq Cohen',
+  'Lucia Dubois',
+  'Ethan Walker',
+  'Maya Khan',
+  'Arjun Berg',
+  'Sofia Costa',
+  'Liam Ahmed',
+  'Aisha Moreau',
+  'Noah Tanaka',
+  'Mei Ivanov',
+  'Omar Haddad',
+  'Elena Rossi',
+  'Kai Kim',
+  'Zara Novak',
+  'Ravi Santos',
+  'Nina Cohen',
+  'Leo Dubois',
+  'Hana Walker',
+  'Sam Rodriguez',
+  'Ivy Patel',
+  'Tariq Nguyen',
+  'Lucia Okafor',
+  'Ethan Silva',
+];
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);

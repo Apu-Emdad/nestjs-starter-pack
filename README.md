@@ -124,8 +124,8 @@ yarn migrate:deploy
 yarn db:seed
 ```
 
-- `yarn migrate:deploy` creates the tables and the `USER` and `SUPER_ADMIN` roles.
-- `yarn db:seed` creates the super admin `admin` with the password `12345678`. It skips the user if the user name or email already exists, so it is safe to run again. Change the password after the first login.
+- `yarn migrate:deploy` creates the tables.
+- `yarn db:seed` creates the `USER` and `SUPER_ADMIN` roles, the example teams and the super admin `admin` with the password `12345678`. It skips the user if the user name or email already exists, so it is safe to run again. Change the password after the first login.
 
 ### 8. Run the API
 
@@ -179,6 +179,12 @@ More detail on services, ports and connecting a database client is in [docs/loca
 | `GET /users/:uid`              | Super admin    | One user                                          |
 | `PATCH /users/deactivate/:uid` | Super admin    | Deactivate a user and revoke their sessions       |
 | `DELETE /users/:uid`           | Super admin    | Delete a user and revoke their sessions           |
+| `GET /teams`                   | Super admin    | List teams, optionally for one department         |
+| `GET /employees`               | Super admin    | List employees, with search and filters           |
+| `GET /employees/:uid`          | Super admin    | One employee                                      |
+| `POST /employees`              | Super admin    | Create an employee and their login                |
+| `PATCH /employees/:uid`        | Super admin    | Update an employee                                |
+| `DELETE /employees/:uid`       | Super admin    | Delete an employee and their login                |
 | `GET /health`                  | Public         | Health check                                      |
 
 Full request and response details are in Swagger at `/docs`.

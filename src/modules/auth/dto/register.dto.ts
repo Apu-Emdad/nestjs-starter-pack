@@ -14,7 +14,7 @@ const toLowerTrimmed = ({ value }: { value: unknown }) =>
 
 export class RegisterDto {
   @ApiProperty({
-    example: 'apu_emdad',
+    example: 'maya_rodriguez',
     description: '3 to 30 characters: a-z, 0-9, _ and -. Stored lowercase.',
   })
   @Transform(toLowerTrimmed)
@@ -26,7 +26,7 @@ export class RegisterDto {
   })
   userName: string;
 
-  @ApiProperty({ example: 'apu@example.com' })
+  @ApiProperty({ example: 'maya.rodriguez@example.com' })
   @Transform(toLowerTrimmed)
   @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Email must be a valid email address' })

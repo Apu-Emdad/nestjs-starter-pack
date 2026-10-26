@@ -15,6 +15,8 @@ PostgreSQL, managed with Prisma. `prisma/schema.prisma` implements this design.
 ```mermaid
 erDiagram
     roles ||--o{ users : "assigned to"
+    users ||--o| employees : "has profile"
+    teams ||--o{ employees : "has members"
 
     roles {
         bigint id PK
@@ -29,13 +31,28 @@ erDiagram
         text password_hash
         bigint role_id FK
     }
+    teams {
+        bigint id PK
+        text uid UK
+        text name UK
+        Department department
+    }
+    employees {
+        bigint id PK
+        text uid UK
+        bigint user_id FK
+        bigint team_id FK
+        text full_name
+        int salary
+        EmploymentType employment_type
+    }
 ```
 
 ## Tables
 
 ### `roles`
 
-One row per role. Seeded with `USER` and `SUPER_ADMIN` in the `init` migration; code refers to them through the `ROLE` constant (`src/common/constants/roles.ts`).
+One row per role. Created by the seed (`yarn db:seed`) with `USER` and `SUPER_ADMIN`; code refers to them through the `ROLE` constant (`src/common/constants/roles.ts`).
 
 | Column             | Type           | Null | Notes                                            |
 | ------------------ | -------------- | ---- | ------------------------------------------------ |
@@ -60,10 +77,46 @@ One row per role. Seeded with `USER` and `SUPER_ADMIN` in the `init` migration; 
 | `created_at`    | `timestamp(3)` | no   | Default `now()`                                                      |
 | `updated_at`    | `timestamp(3)` | no   | Updated by Prisma                                                    |
 
+### `teams`
+
+Example data for the employees feature, created by the seed. The team dropdown on the employee form reads them through `GET /teams`.
+
+| Column       | Type           | Null | Notes                                            |
+| ------------ | -------------- | ---- | ------------------------------------------------ |
+| `id`         | `bigint`       | no   | PK, auto-increment (`bigserial`)                 |
+| `uid`        | `text`         | no   | Unique, default `generate_uid()` (10 characters) |
+| `name`       | `text`         | no   | Unique                                           |
+| `department` | `Department`   | no   | `ENGINEERING`, `DESIGN` or `SALES`. Indexed      |
+| `created_at` | `timestamp(3)` | no   | Default `now()`                                  |
+| `updated_at` | `timestamp(3)` | no   | Updated by Prisma                                |
+
+### `employees`
+
+An employee is a profile on a user account: creating an employee also creates the login.
+
+| Column            | Type             | Null | Notes                                                           |
+| ----------------- | ---------------- | ---- | --------------------------------------------------------------- |
+| `id`              | `bigint`         | no   | PK, auto-increment (`bigserial`)                                |
+| `uid`             | `text`           | no   | Unique, default `generate_uid()` (10 characters)                |
+| `user_id`         | `bigint`         | no   | Unique, FK → `users.id`, on delete cascade                      |
+| `team_id`         | `bigint`         | no   | FK → `teams.id`, on delete restrict. Indexed                    |
+| `full_name`       | `text`           | no   | 3 to 60 characters                                              |
+| `bio`             | `text`           | yes  | Up to 300 characters                                            |
+| `salary`          | `integer`        | no   | Whole number, per month                                         |
+| `skills`          | `text[]`         | no   | Up to 10 items                                                  |
+| `employment_type` | `EmploymentType` | no   | `FULL_TIME`, `PART_TIME` or `CONTRACT`                          |
+| `join_date`       | `date`           | no   | Not in the future                                               |
+| `is_remote`       | `boolean`        | no   | Default `false`                                                 |
+| `created_at`      | `timestamp(3)`   | no   | Default `now()`                                                 |
+| `updated_at`      | `timestamp(3)`   | no   | Updated by Prisma                                               |
+
 ## Design decisions
 
 - **Two ids per row.** The integer `id` keeps primary keys, foreign keys and indexes small and fast. The random `uid` is what the API exposes, so URLs like `/users/:uid` can't be guessed or counted. The integer `id` never leaves the backend.
 - **Roles live in their own table.** Each user has exactly one role through `users.role_id`; many users share a role. New roles are added as rows, without a schema change. A role in use can't be deleted (`on delete restrict`). Permissions are not modelled yet.
+
+- **Employees are profiles on users.** The login (user name, email, password hash) stays in `users`, so there is one place for credentials and no email stored twice. Deleting the user removes the profile (`on delete cascade`), and the API deletes an employee by deleting their user.
+- **The department comes from the team.** `teams.department` is the only place it is stored, so an employee can't have a department that disagrees with their team. The API takes a `teamUid`, and the department filter reads through the team.
 
 ## Adding a table
 

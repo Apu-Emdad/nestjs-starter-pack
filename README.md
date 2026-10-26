@@ -125,7 +125,7 @@ yarn db:seed
 ```
 
 - `yarn migrate:deploy` creates the tables.
-- `yarn db:seed` creates the `USER` and `SUPER_ADMIN` roles, the example teams and the super admin `admin` with the password `12345678`. It skips the user if the user name or email already exists, so it is safe to run again. Change the password after the first login.
+- `yarn db:seed` creates the `USER` and `SUPER_ADMIN` roles, the example teams, 40 example employees and the super admin `admin` with the password `12345678`. It skips the user if the user name or email already exists, so it is safe to run again. Change the password after the first login.
 
 ### 8. Run the API
 

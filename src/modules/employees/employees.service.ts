@@ -20,6 +20,20 @@ import {
   UpdateEmployeeDto,
 } from './employees.dto.js';
 
+const EMPLOYEE_SELECT = {
+  uid: true,
+  fullName: true,
+  bio: true,
+  salary: true,
+  skills: true,
+  employmentType: true,
+  joinDate: true,
+  isRemote: true,
+  createdAt: true,
+  userInfo: { select: { uid: true, userName: true, email: true } },
+  teamInfo: { select: { uid: true, name: true, department: true } },
+} satisfies Prisma.EmployeeSelect;
+
 @Injectable()
 export class EmployeesService {
   constructor(
@@ -61,7 +75,7 @@ export class EmployeesService {
         take: pageSize,
         where: filter,
         orderBy: { createdAt: 'desc' },
-        include: { userInfo: true, teamInfo: true },
+        select: EMPLOYEE_SELECT,
       }),
     ]);
 
@@ -75,7 +89,7 @@ export class EmployeesService {
   async getEmployee(uid: string): Promise<Result> {
     const employee = await this.prisma.employee.findUnique({
       where: { uid },
-      include: { userInfo: true, teamInfo: true },
+      select: EMPLOYEE_SELECT,
     });
 
     if (!employee) {
@@ -128,7 +142,7 @@ export class EmployeesService {
           },
         },
       },
-      include: { userInfo: true, teamInfo: true },
+      select: EMPLOYEE_SELECT,
     });
 
     return {
@@ -166,7 +180,7 @@ export class EmployeesService {
         isRemote: dto.isRemote,
         teamId: team?.id,
       },
-      include: { userInfo: true, teamInfo: true },
+      select: EMPLOYEE_SELECT,
     });
 
     return {

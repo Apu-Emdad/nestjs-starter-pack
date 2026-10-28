@@ -15,7 +15,11 @@ import { ROLE } from '../../common/constants/roles.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../auth/auth.types.js';
-import { CreateEmployeeDto, EmployeesQueryDto } from './employees.dto.js';
+import {
+  CreateEmployeeDto,
+  EmployeesQueryDto,
+  UpdateEmployeeDto,
+} from './employees.dto.js';
 import { EmployeesService } from './employees.service.js';
 
 @ApiBearerAuth()
@@ -46,7 +50,7 @@ export class EmployeesController {
   @Put(':uid')
   async updateEmployee(
     @Param('uid') uid: string,
-    @Body() dto: CreateEmployeeDto,
+    @Body() dto: UpdateEmployeeDto,
     @Res() res: Response,
   ) {
     const result = await this.employeesService.updateEmployee(uid, dto);

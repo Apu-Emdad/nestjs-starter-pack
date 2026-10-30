@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import type { Result } from '../../common/interfaces/result.interface.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { PrismaService } from '../../infra/prisma/prisma.service.js';
 import { TeamsQueryDto } from './teams.dto.js';
 
 @Injectable()

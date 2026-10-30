@@ -1,8 +1,8 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import type { Env } from '../config/env.js';
-import { PrismaClient } from '../generated/prisma/client.js';
+import type { Env } from '../../config/env.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
 
 // Connects lazily on the first query, so the app can boot without a database.
 @Injectable()

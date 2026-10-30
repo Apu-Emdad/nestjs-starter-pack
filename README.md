@@ -199,8 +199,9 @@ src/
   modules/
     auth/       register, login, refresh tokens, guards
     users/      user management
-  prisma/       Prisma client as a Nest service
-  redis/        Redis client as a Nest service
+  infra/
+    prisma/     Prisma client as a Nest service
+    redis/      Redis client as a Nest service
   swagger/      Swagger UI tweaks
 prisma/
   schema.prisma database schema (roles, users)

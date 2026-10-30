@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import dayjs from 'dayjs';
-import type { PrismaService } from '../../prisma/prisma.service.js';
+import type { PrismaService } from '../../infra/prisma/prisma.service.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import type { TokenService } from '../auth/token.service.js';
 import type { CreateEmployeeDto } from './employees.dto.js';

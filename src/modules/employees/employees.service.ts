@@ -11,7 +11,7 @@ import dayjs from 'dayjs';
 import { ROLE } from '../../common/constants/roles.js';
 import type { Result } from '../../common/interfaces/result.interface.js';
 import type { Prisma } from '../../generated/prisma/client.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { PrismaService } from '../../infra/prisma/prisma.service.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { TokenService } from '../auth/token.service.js';
 import {

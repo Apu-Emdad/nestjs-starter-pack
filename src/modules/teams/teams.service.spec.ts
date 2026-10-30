@@ -1,4 +1,4 @@
-import type { PrismaService } from '../../prisma/prisma.service.js';
+import type { PrismaService } from '../../infra/prisma/prisma.service.js';
 import { TeamsService } from './teams.service.js';
 
 const teams = [

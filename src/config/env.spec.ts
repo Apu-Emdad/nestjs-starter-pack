@@ -6,6 +6,10 @@ const validEnv = {
   REDIS_PORT: '6380',
   JWT_ACCESS_SECRET: 'a-test-access-secret-at-least-32-chars',
   JWT_REFRESH_SECRET: 'a-test-refresh-secret-at-least-32-chars',
+  SMTP_HOST: 'smtp.example.com',
+  SMTP_USER: 'smtp-user',
+  SMTP_PASS: 'smtp-pass',
+  MAIL_FROM: 'Starter <no-reply@example.com>',
 };
 
 describe('validateEnv', () => {
@@ -22,7 +26,24 @@ describe('validateEnv', () => {
       JWT_REFRESH_SECRET: validEnv.JWT_REFRESH_SECRET,
       JWT_REFRESH_EXPIRES_IN: 604800,
       WEB_ORIGIN: 'http://localhost:5173',
+      WEB_URL: 'http://localhost:5173',
+      SMTP_HOST: 'smtp.example.com',
+      SMTP_PORT: 587,
+      SMTP_USER: 'smtp-user',
+      SMTP_PASS: 'smtp-pass',
+      MAIL_FROM: 'Starter <no-reply@example.com>',
     });
+  });
+
+  it('throws when the SMTP settings are missing', () => {
+    const { SMTP_HOST: _host, SMTP_PASS: _pass, ...withoutSmtp } = validEnv;
+    expect(() => validateEnv(withoutSmtp)).toThrow(/SMTP_HOST[\s\S]*SMTP_PASS/);
+  });
+
+  it('rejects an invalid WEB_URL', () => {
+    expect(() => validateEnv({ ...validEnv, WEB_URL: 'not a url' })).toThrow(
+      /WEB_URL/,
+    );
   });
 
   it('throws and names every missing variable', () => {

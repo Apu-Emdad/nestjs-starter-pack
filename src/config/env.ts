@@ -59,6 +59,32 @@ export class Env {
   // Origin of the web app, allowed by CORS to send the refresh cookie
   @IsUrl({ require_tld: false })
   WEB_ORIGIN: string = 'http://localhost:5173';
+
+  // Base URL of the web app, used for the links in emails
+  @IsUrl({ require_tld: false })
+  WEB_URL: string = 'http://localhost:5173';
+
+  @IsString()
+  @IsNotEmpty()
+  SMTP_HOST: string;
+
+  // 465 uses TLS from the start; other ports (usually 587) upgrade with STARTTLS
+  @IsInt()
+  @IsPositive()
+  SMTP_PORT: number = 587;
+
+  @IsString()
+  @IsNotEmpty()
+  SMTP_USER: string;
+
+  @IsString()
+  @IsNotEmpty()
+  SMTP_PASS: string;
+
+  // Sender shown in emails, e.g. "My App <no-reply@example.com>"
+  @IsString()
+  @IsNotEmpty()
+  MAIL_FROM: string;
 }
 
 // Used by ConfigModule: throws on startup when a variable is missing or invalid.

@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { ErrorMessage } from '../../common/decorators/error-message.decorator.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import type { Env } from '../../config/env.js';
 import { AuthService } from './auth.service.js';
@@ -75,7 +74,6 @@ export class AuthController {
 
   @Public()
   @Post('verify-email')
-  @ErrorMessage('An error occurred while verifying the email')
   async verifyEmail(@Body() dto: VerifyEmailDto, @Res() res: Response) {
     const result = await this.authService.verifyEmail(dto);
     res.status(result.status).json(result);
@@ -83,7 +81,6 @@ export class AuthController {
 
   @Post('resend-verification')
   @ApiBearerAuth()
-  @ErrorMessage('An error occurred while sending the verification email')
   async resendVerification(
     @CurrentUser() authUser: AuthUser,
     @Req() req: Request,
@@ -98,7 +95,6 @@ export class AuthController {
 
   @Public()
   @Post('forgot-password')
-  @ErrorMessage('An error occurred while sending the reset email')
   async forgotPassword(
     @Body() dto: ForgotPasswordDto,
     @Req() req: Request,
@@ -110,7 +106,6 @@ export class AuthController {
 
   @Public()
   @Post('reset-password')
-  @ErrorMessage('An error occurred while resetting the password')
   async resetPassword(@Body() dto: ResetPasswordDto, @Res() res: Response) {
     const result = await this.authService.resetPassword(dto);
     res.status(result.status).json(result);

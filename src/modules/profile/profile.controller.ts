@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { ErrorMessage } from '../../common/decorators/error-message.decorator.js';
 import type { Env } from '../../config/env.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { setRefreshCookie } from '../auth/refresh-cookie.js';
@@ -20,7 +19,6 @@ export class ProfileController {
   ) {}
 
   @Patch()
-  @ErrorMessage('An error occurred while updating the profile')
   async updateProfile(
     @CurrentUser() authUser: AuthUser,
     @Body() dto: UpdateProfileDto,
@@ -31,7 +29,6 @@ export class ProfileController {
   }
 
   @Patch('password')
-  @ErrorMessage('An error occurred while changing the password')
   async changePassword(
     @CurrentUser() authUser: AuthUser,
     @Body() dto: ChangePasswordDto,

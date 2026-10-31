@@ -27,7 +27,7 @@ const env: Record<string, unknown> = {
   JWT_REFRESH_SECRET: 'a-test-refresh-secret-at-least-32-chars',
   JWT_ACCESS_EXPIRES_IN: 900,
   JWT_REFRESH_EXPIRES_IN: 604800,
-  WEB_URL: 'http://localhost:5173',
+  WEB_URL: 'http://localhost:5001',
 };
 const USER_UID = 'k3F9x2Mq7A';
 
@@ -249,7 +249,7 @@ describe('AuthService', () => {
         to: 'apu@example.com',
       });
       expect(mail.sent[0].link).toMatch(
-        /^http:\/\/localhost:5173\/verify-email\?token=[a-f0-9]{64}$/,
+        /^http:\/\/localhost:5001\/verify-email\?token=[a-f0-9]{64}$/,
       );
     });
 

@@ -19,7 +19,7 @@ export class Env {
 
   @IsInt()
   @IsPositive()
-  PORT: number = 3000;
+  PORT: number = 5000;
 
   @IsUrl({ protocols: ['postgres', 'postgresql'], require_tld: false })
   DATABASE_URL: string;
@@ -58,11 +58,11 @@ export class Env {
 
   // Origin of the web app, allowed by CORS to send the refresh cookie
   @IsUrl({ require_tld: false })
-  WEB_ORIGIN: string = 'http://localhost:5173';
+  WEB_ORIGIN: string = 'http://localhost:5001';
 
   // Base URL of the web app, used for the links in emails
   @IsUrl({ require_tld: false })
-  WEB_URL: string = 'http://localhost:5173';
+  WEB_URL: string = 'http://localhost:5001';
 
   @IsString()
   @IsNotEmpty()

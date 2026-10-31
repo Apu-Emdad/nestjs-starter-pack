@@ -30,5 +30,5 @@ COPY --chown=node:node package.json ./
 COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 USER node
-EXPOSE 3000
+EXPOSE 5000
 CMD ["node", "dist/main.js"]

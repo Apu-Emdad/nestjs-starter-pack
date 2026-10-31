@@ -23,7 +23,7 @@ describe('EmailTokenService', () => {
     emailTokens = createFakeEmailTokens();
     mail = new FakeMailService();
     const config = {
-      get: () => 'http://localhost:5173/',
+      get: () => 'http://localhost:5001/',
     } as unknown as ConfigService<Env, true>;
     service = new EmailTokenService(
       { emailToken: emailTokens } as unknown as PrismaService,
@@ -126,10 +126,10 @@ describe('EmailTokenService', () => {
       ['reset-password', 'apu@example.com'],
     ]);
     expect(mail.sent[0].link).toBe(
-      `http://localhost:5173/verify-email?token=${mail.lastToken('verify-email')}`,
+      `http://localhost:5001/verify-email?token=${mail.lastToken('verify-email')}`,
     );
     expect(mail.sent[1].link).toMatch(
-      /^http:\/\/localhost:5173\/reset-password\?token=[a-f0-9]{64}$/,
+      /^http:\/\/localhost:5001\/reset-password\?token=[a-f0-9]{64}$/,
     );
   });
 });

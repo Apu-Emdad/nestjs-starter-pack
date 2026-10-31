@@ -45,9 +45,9 @@ This starts PostgreSQL, Redis and the API, applies the database migrations and c
 
 |                    | URL                            |
 | ------------------ | ------------------------------ |
-| API                | `http://localhost:3000`        |
-| API docs (Swagger) | `http://localhost:3000/docs`   |
-| Health check       | `http://localhost:3000/health` |
+| API                | `http://localhost:5000`        |
+| API docs (Swagger) | `http://localhost:5000/docs`   |
+| Health check       | `http://localhost:5000/health` |
 
 Log in at `POST /auth/login` as `admin` with the password `12345678`. Change the secrets in `.env` and the super admin password before using it anywhere other than your own machine.
 
@@ -136,7 +136,7 @@ yarn db:seed
 yarn dev
 ```
 
-Open `http://localhost:3000/docs` and log in at `POST /auth/login` as `admin` with the password `12345678`.
+Open `http://localhost:5000/docs` and log in at `POST /auth/login` as `admin` with the password `12345678`.
 
 ### 9. Commit your starting point
 

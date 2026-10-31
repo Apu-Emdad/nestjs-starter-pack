@@ -38,7 +38,7 @@ describe('MailService', () => {
   });
 
   it('sends the verify email with the link in the HTML and the text', async () => {
-    const link = 'http://localhost:5173/verify-email?token=abc';
+    const link = 'http://localhost:5001/verify-email?token=abc';
 
     await mailService.sendVerifyEmail('apu@example.com', 'apu_emdad', link);
 
@@ -57,7 +57,7 @@ describe('MailService', () => {
     await mailService.sendResetPassword(
       'apu@example.com',
       'apu_emdad',
-      'http://localhost:5173/reset-password?token=abc&x=<b>',
+      'http://localhost:5001/reset-password?token=abc&x=<b>',
     );
 
     const mail = sendMail.mock.calls[0][0];

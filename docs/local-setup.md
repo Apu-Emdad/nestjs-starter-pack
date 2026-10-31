@@ -50,7 +50,7 @@ The API sends the verify email and reset password emails over SMTP with nodemail
 | `SMTP_USER` | SMTP login                                                                                    |
 | `SMTP_PASS` | SMTP password or key. Keep it only in `.env`, never in `.env.example`                         |
 | `MAIL_FROM` | Sender, e.g. `My App <no-reply@example.com>`. Most providers only send from a verified sender |
-| `WEB_URL`   | Base URL of the web app; the links in emails point there. Default `http://localhost:5173`     |
+| `WEB_URL`   | Base URL of the web app; the links in emails point there. Default `http://localhost:5001`     |
 
 With [Brevo](https://www.brevo.com) (free plan): verify a sender under **Senders, domains and IPs**, then take the login and an SMTP key from **SMTP and API → SMTP**. Use `smtp-relay.brevo.com` and port `587`.
 
@@ -66,7 +66,7 @@ Rate limits: forgot password and resend verification allow 5 requests per 15 min
 | --- | --- | --- |
 | PostgreSQL 18 | `5433` | `nestjs-starter-pack-postgres` |
 | Redis 8 | `6381` | `nestjs-starter-pack-redis` |
-| API | `3000` (`PORT`) | `nestjs-starter-pack-api` |
+| API | `5000` (`PORT`) | `nestjs-starter-pack-api` |
 | Migrations and seed (one-off) | none | `nestjs-starter-pack-migrate` |
 
 Host ports are set in `.env` (`POSTGRES_PORT`, `REDIS_PORT`). They avoid 5432 and 6379 so they don't clash with a locally installed PostgreSQL or Redis. Change them if they clash with another project.

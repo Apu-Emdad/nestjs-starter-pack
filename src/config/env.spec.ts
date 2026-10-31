@@ -16,7 +16,7 @@ describe('validateEnv', () => {
   it('parses valid variables and applies defaults', () => {
     expect(validateEnv(validEnv)).toEqual({
       NODE_ENV: 'development',
-      PORT: 3000,
+      PORT: 5000,
       DATABASE_URL: validEnv.DATABASE_URL,
       REDIS_HOST: 'localhost',
       REDIS_PORT: 6380,
@@ -25,8 +25,8 @@ describe('validateEnv', () => {
       JWT_ACCESS_EXPIRES_IN: 900,
       JWT_REFRESH_SECRET: validEnv.JWT_REFRESH_SECRET,
       JWT_REFRESH_EXPIRES_IN: 604800,
-      WEB_ORIGIN: 'http://localhost:5173',
-      WEB_URL: 'http://localhost:5173',
+      WEB_ORIGIN: 'http://localhost:5001',
+      WEB_URL: 'http://localhost:5001',
       SMTP_HOST: 'smtp.example.com',
       SMTP_PORT: 587,
       SMTP_USER: 'smtp-user',

@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { configureApp } from './app.setup.js';
 import type { Env } from './config/env.js';
-import { REFRESH_COOKIE } from './modules/auth/auth.controller.js';
+import { REFRESH_COOKIE } from './modules/auth/refresh-cookie.js';
 import { SWAGGER_CUSTOM_CSS, SWAGGER_CUSTOM_JS } from './swagger/swagger-ui.js';
 
 const DOCS_PATH = 'docs';

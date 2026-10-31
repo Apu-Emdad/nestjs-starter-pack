@@ -8,6 +8,7 @@ A NestJS API starter with authentication, users and roles already built, so a ne
 ## Features
 
 - **Auth:** register and log in with username or email. Short-lived JWT access tokens, and rotating refresh tokens in an `httpOnly` cookie, tracked in Redis. Reusing an old refresh token revokes all of that user's sessions.
+- **Account self-service:** email verification (optional: unverified users can still log in), forgot and reset password, and a profile to change the user name, email and password. Email links work once and only their SHA-256 hash is stored. Resetting or changing the password logs out the other sessions. Emails go out over SMTP with nodemailer, and the email endpoints are rate limited in Redis.
 - **Roles:** `USER` and `SUPER_ADMIN`, with `@Public()` and `@Roles()` decorators and global guards. Every route needs a login unless it is marked public.
 - **User management:** list, search, filter, deactivate and delete users (super admin only).
 - **One response shape:** every response, success or error, is `{ status, message, data?, error?, context? }`. A global filter turns every thrown error into that shape and logs unexpected ones.
@@ -44,9 +45,9 @@ This starts PostgreSQL, Redis and the API, applies the database migrations and c
 
 |                    | URL                            |
 | ------------------ | ------------------------------ |
-| API                | `http://localhost:3000`        |
-| API docs (Swagger) | `http://localhost:3000/docs`   |
-| Health check       | `http://localhost:3000/health` |
+| API                | `http://localhost:5000`        |
+| API docs (Swagger) | `http://localhost:5000/docs`   |
+| Health check       | `http://localhost:5000/health` |
 
 Log in at `POST /auth/login` as `admin` with the password `12345678`. Change the secrets in `.env` and the super admin password before using it anywhere other than your own machine.
 
@@ -107,6 +108,8 @@ Then edit `.env`:
 
 - **JWT secrets:** set `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` to two different random values of at least 32 characters. Generate each one with `openssl rand -base64 48`.
 - **Web app origin:** set `WEB_ORIGIN` to your frontend's URL, so CORS lets it send the refresh cookie.
+- **Web app URL:** set `WEB_URL` to your frontend's base URL. The links in emails point there (`<WEB_URL>/verify-email?token=...`, `<WEB_URL>/reset-password?token=...`).
+- **Email (SMTP):** set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `MAIL_FROM`. Any SMTP provider works; see [Email (SMTP)](docs/local-setup.md#email-smtp).
 - **Database:** if you change `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` or `POSTGRES_PORT`, update `DATABASE_URL` to match.
 
 The app checks `.env` on startup and exits with a list of the missing or invalid variables.
@@ -133,7 +136,7 @@ yarn db:seed
 yarn dev
 ```
 
-Open `http://localhost:3000/docs` and log in at `POST /auth/login` as `admin` with the password `12345678`.
+Open `http://localhost:5000/docs` and log in at `POST /auth/login` as `admin` with the password `12345678`.
 
 ### 9. Commit your starting point
 
@@ -168,24 +171,30 @@ More detail on services, ports and connecting a database client is in [docs/loca
 
 ## API
 
-| Endpoint                       | Access         | What it does                                      |
-| ------------------------------ | -------------- | ------------------------------------------------- |
-| `POST /auth/register`          | Public         | Create a `USER` account and log in                |
-| `POST /auth/login`             | Public         | Log in with username or email                     |
-| `POST /auth/refresh`           | Refresh cookie | Get a new access token; rotates the refresh token |
-| `POST /auth/logout`            | Refresh cookie | Revoke the refresh token and clear the cookie     |
-| `GET /auth/me`                 | Logged in      | The current user                                  |
-| `GET /users`                   | Super admin    | List users, with search, role and status filters  |
-| `GET /users/:uid`              | Super admin    | One user                                          |
-| `PATCH /users/deactivate/:uid` | Super admin    | Deactivate a user and revoke their sessions       |
-| `DELETE /users/:uid`           | Super admin    | Delete a user and revoke their sessions           |
-| `GET /teams`                   | Super admin    | List teams, optionally for one department         |
-| `GET /employees`               | Super admin    | List employees, with search and filters           |
-| `GET /employees/:uid`          | Super admin    | One employee                                      |
-| `POST /employees`              | Super admin    | Create an employee and their login                |
-| `PATCH /employees/:uid`        | Super admin    | Update an employee                                |
-| `DELETE /employees/:uid`       | Super admin    | Delete an employee and their login                |
-| `GET /health`                  | Public         | Health check                                      |
+| Endpoint                         | Access         | What it does                                      |
+| -------------------------------- | -------------- | ------------------------------------------------- |
+| `POST /auth/register`            | Public         | Create a `USER` account and log in                |
+| `POST /auth/login`               | Public         | Log in with username or email                     |
+| `POST /auth/refresh`             | Refresh cookie | Get a new access token; rotates the refresh token |
+| `POST /auth/logout`              | Refresh cookie | Revoke the refresh token and clear the cookie     |
+| `GET /auth/me`                   | Logged in      | The current user, with `emailVerified`            |
+| `POST /auth/verify-email`        | Public         | Verify the email with the token from the link     |
+| `POST /auth/resend-verification` | Logged in      | Send a new verify link (5 per 15 minutes)         |
+| `POST /auth/forgot-password`     | Public         | Email a reset link (5 per 15 minutes)             |
+| `POST /auth/reset-password`      | Public         | Set a new password and log out every session      |
+| `PATCH /profile`                 | Logged in      | Change your user name and email                   |
+| `PATCH /profile/password`        | Logged in      | Change your password; other sessions log out      |
+| `GET /users`                     | Super admin    | List users, with search, role and status filters  |
+| `GET /users/:uid`                | Super admin    | One user                                          |
+| `PATCH /users/deactivate/:uid`   | Super admin    | Deactivate a user and revoke their sessions       |
+| `DELETE /users/:uid`             | Super admin    | Delete a user and revoke their sessions           |
+| `GET /teams`                     | Super admin    | List teams, optionally for one department         |
+| `GET /employees`                 | Super admin    | List employees, with search and filters           |
+| `GET /employees/:uid`            | Super admin    | One employee                                      |
+| `POST /employees`                | Super admin    | Create an employee and their login                |
+| `PATCH /employees/:uid`          | Super admin    | Update an employee                                |
+| `DELETE /employees/:uid`         | Super admin    | Delete an employee and their login                |
+| `GET /health`                    | Public         | Health check                                      |
 
 Full request and response details are in Swagger at `/docs`.
 
@@ -197,14 +206,16 @@ src/
   config/       environment validation
   health/       health check
   modules/
-    auth/       register, login, refresh tokens, guards
+    auth/       register, login, refresh tokens, guards, email verification, password reset
+    profile/    change your own user name, email and password
     users/      user management
   infra/
     prisma/     Prisma client as a Nest service
-    redis/      Redis client as a Nest service
+    redis/      Redis client and rate limits as Nest services
+    mail/       SMTP emails (nodemailer) and their templates
   swagger/      Swagger UI tweaks
 prisma/
-  schema.prisma database schema (roles, users)
+  schema.prisma database schema (roles, users, email tokens, teams, employees)
   migrations/   SQL migrations
   seed.ts       creates the first super admin
 test/           end-to-end tests

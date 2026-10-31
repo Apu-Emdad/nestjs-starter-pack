@@ -19,7 +19,7 @@ export class Env {
 
   @IsInt()
   @IsPositive()
-  PORT: number = 3000;
+  PORT: number = 5000;
 
   @IsUrl({ protocols: ['postgres', 'postgresql'], require_tld: false })
   DATABASE_URL: string;
@@ -58,7 +58,33 @@ export class Env {
 
   // Origin of the web app, allowed by CORS to send the refresh cookie
   @IsUrl({ require_tld: false })
-  WEB_ORIGIN: string = 'http://localhost:5173';
+  WEB_ORIGIN: string = 'http://localhost:5001';
+
+  // Base URL of the web app, used for the links in emails
+  @IsUrl({ require_tld: false })
+  WEB_URL: string = 'http://localhost:5001';
+
+  @IsString()
+  @IsNotEmpty()
+  SMTP_HOST: string;
+
+  // 465 uses TLS from the start; other ports (usually 587) upgrade with STARTTLS
+  @IsInt()
+  @IsPositive()
+  SMTP_PORT: number = 587;
+
+  @IsString()
+  @IsNotEmpty()
+  SMTP_USER: string;
+
+  @IsString()
+  @IsNotEmpty()
+  SMTP_PASS: string;
+
+  // Sender shown in emails, e.g. "My App <no-reply@example.com>"
+  @IsString()
+  @IsNotEmpty()
+  MAIL_FROM: string;
 }
 
 // Used by ConfigModule: throws on startup when a variable is missing or invalid.

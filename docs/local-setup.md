@@ -39,13 +39,34 @@ yarn dev
 
 The app validates `.env` on startup and exits with a list of the missing or invalid variables.
 
+## Email (SMTP)
+
+The API sends the verify email and reset password emails over SMTP with nodemailer. Set these in `.env`:
+
+| Variable    | What it is                                                                                    |
+| ----------- | --------------------------------------------------------------------------------------------- |
+| `SMTP_HOST` | SMTP server, e.g. `smtp-relay.brevo.com`                                                      |
+| `SMTP_PORT` | `587` (STARTTLS, default) or `465` (TLS)                                                      |
+| `SMTP_USER` | SMTP login                                                                                    |
+| `SMTP_PASS` | SMTP password or key. Keep it only in `.env`, never in `.env.example`                         |
+| `MAIL_FROM` | Sender, e.g. `My App <no-reply@example.com>`. Most providers only send from a verified sender |
+| `WEB_URL`   | Base URL of the web app; the links in emails point there. Default `http://localhost:5001`     |
+
+With [Brevo](https://www.brevo.com) (free plan): verify a sender under **Senders, domains and IPs**, then take the login and an SMTP key from **SMTP and API → SMTP**. Use `smtp-relay.brevo.com` and port `587`.
+
+The API starts without connecting to SMTP. If an email fails, the error is logged (never the SMTP password). Registration and forgot password still succeed; resend verification returns a 500 so the user can try again.
+
+To try the flows without a real provider, run a local SMTP inbox such as [Mailpit](https://mailpit.axllent.org) (`docker run -p 1025:1025 -p 8025:8025 axllent/mailpit`), set `SMTP_HOST=localhost`, `SMTP_PORT=1025`, any `SMTP_USER` and `SMTP_PASS`, and open `http://localhost:8025`.
+
+Rate limits: forgot password and resend verification allow 5 requests per 15 minutes per email and per IP, counted in Redis. The IP is `req.ip`; behind a proxy, enable Express `trust proxy` so it is the client's IP.
+
 ## Services
 
 | Service | Host port | Container |
 | --- | --- | --- |
 | PostgreSQL 18 | `5433` | `nestjs-starter-pack-postgres` |
 | Redis 8 | `6381` | `nestjs-starter-pack-redis` |
-| API | `3000` (`PORT`) | `nestjs-starter-pack-api` |
+| API | `5000` (`PORT`) | `nestjs-starter-pack-api` |
 | Migrations and seed (one-off) | none | `nestjs-starter-pack-migrate` |
 
 Host ports are set in `.env` (`POSTGRES_PORT`, `REDIS_PORT`). They avoid 5432 and 6379 so they don't clash with a locally installed PostgreSQL or Redis. Change them if they clash with another project.

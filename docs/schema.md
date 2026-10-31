@@ -15,6 +15,7 @@ PostgreSQL, managed with Prisma. `prisma/schema.prisma` implements this design.
 ```mermaid
 erDiagram
     roles ||--o{ users : "assigned to"
+    users ||--o{ email_tokens : "has"
     users ||--o| employees : "has profile"
     teams ||--o{ employees : "has members"
 
@@ -30,6 +31,14 @@ erDiagram
         text email UK
         text password_hash
         bigint role_id FK
+        timestamp email_verified_at
+    }
+    email_tokens {
+        bigint id PK
+        text uid UK
+        bigint user_id FK
+        EmailTokenType type
+        text token_hash UK
     }
     teams {
         bigint id PK
@@ -74,8 +83,24 @@ One row per role. Created by the seed (`yarn db:seed`) with `USER` and `SUPER_AD
 | `password_hash` | `text`         | no   | Argon2 hash                                                          |
 | `role_id`       | `bigint`       | no   | FK → `roles.id`, on delete restrict. New users get the `USER` role   |
 | `is_active`     | `boolean`      | no   | Default `true`                                                       |
+| `email_verified_at` | `timestamp(3)` | yes | When the email was verified. `null` until then, and again after the email changes. The seeded super admin starts verified |
 | `created_at`    | `timestamp(3)` | no   | Default `now()`                                                      |
 | `updated_at`    | `timestamp(3)` | no   | Updated by Prisma                                                    |
+
+### `email_tokens`
+
+One-use tokens sent in email links. The link carries 32 random bytes as hex; only their SHA-256 hash is stored.
+
+| Column       | Type             | Null | Notes                                                                       |
+| ------------ | ---------------- | ---- | --------------------------------------------------------------------------- |
+| `id`         | `bigint`         | no   | PK, auto-increment (`bigserial`)                                            |
+| `uid`        | `text`           | no   | Unique, default `generate_uid()` (10 characters). Never sent anywhere       |
+| `user_id`    | `bigint`         | no   | FK → `users.id`, on delete cascade. Indexed with `type`                     |
+| `type`       | `EmailTokenType` | no   | `VERIFY_EMAIL` or `RESET_PASSWORD`                                          |
+| `token_hash` | `text`           | no   | Unique. SHA-256 of the token, as hex                                        |
+| `expires_at` | `timestamp(3)`   | no   | 24 hours after creation for `VERIFY_EMAIL`, 30 minutes for `RESET_PASSWORD` |
+| `used_at`    | `timestamp(3)`   | yes  | Set when the link is used; a used token never works again                   |
+| `created_at` | `timestamp(3)`   | no   | Default `now()`                                                             |
 
 ### `teams`
 
@@ -114,6 +139,8 @@ An employee is a profile on a user account: creating an employee also creates th
 
 - **Two ids per row.** The integer `id` keeps primary keys, foreign keys and indexes small and fast. The random `uid` is what the API exposes, so URLs like `/users/:uid` can't be guessed or counted. The integer `id` never leaves the backend.
 - **Roles live in their own table.** Each user has exactly one role through `users.role_id`; many users share a role. New roles are added as rows, without a schema change. A role in use can't be deleted (`on delete restrict`). Permissions are not modelled yet.
+
+- **Email tokens are stored hashed.** Someone who reads the database still can't use a link, the same way passwords are stored as hashes. SHA-256 is enough here (no Argon2) because the token is 32 random bytes, so it can't be guessed. Creating a token deletes the user's older unused ones of that type, so only the newest link works. Used and expired rows stay until the next token of that type replaces them.
 
 - **Employees are profiles on users.** The login (user name, email, password hash) stays in `users`, so there is one place for credentials and no email stored twice. Deleting the user removes the profile (`on delete cascade`), and the API deletes an employee by deleting their user.
 - **The department comes from the team.** `teams.department` is the only place it is stored, so an employee can't have a department that disagrees with their team. The API takes a `teamUid`, and the department filter reads through the team.

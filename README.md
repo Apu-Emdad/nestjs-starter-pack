@@ -14,7 +14,7 @@ A NestJS API starter with authentication, users and roles already built, so a ne
 - **One response shape:** every response, success or error, is `{ status, message, data?, error?, context? }`. A global filter turns every thrown error into that shape and logs unexpected ones.
 - **Safe ids:** each row has an internal integer `id` and a random 10-character `uid`. Only the `uid` leaves the API.
 - **Validated config:** `.env` is checked on startup; the app exits with a list of the missing or invalid variables.
-- **API docs:** Swagger UI at `/docs`, with saved login and pinned tags.
+- **API docs:** Swagger UI at `/api/docs`, with saved login and pinned tags.
 - **Docker:** a multi-stage Dockerfile and a Compose file that starts PostgreSQL, Redis, runs migrations and the seed, then starts the API.
 - **Quality:** unit and end-to-end tests with Vitest, oxlint, Prettier and a GitHub Actions workflow.
 
@@ -43,13 +43,13 @@ docker compose up --build
 
 This starts PostgreSQL, Redis and the API, applies the database migrations and creates the first super admin: user name `admin`, password `12345678`. Press Ctrl+C to stop everything.
 
-|                    | URL                            |
-| ------------------ | ------------------------------ |
-| API                | `http://localhost:5000`        |
-| API docs (Swagger) | `http://localhost:5000/docs`   |
-| Health check       | `http://localhost:5000/health` |
+|                    | URL                                |
+| ------------------ | ---------------------------------- |
+| API                | `http://localhost:5000`            |
+| API docs (Swagger) | `http://localhost:5000/api/docs`   |
+| Health check       | `http://localhost:5000/api/health` |
 
-Log in at `POST /auth/login` as `admin` with the password `12345678`. Change the secrets in `.env` and the super admin password before using it anywhere other than your own machine.
+Log in at `POST /api/auth/login` as `admin` with the password `12345678`. Change the secrets in `.env` and the super admin password before using it anywhere other than your own machine.
 
 ## Installation
 
@@ -136,7 +136,7 @@ yarn db:seed
 yarn dev
 ```
 
-Open `http://localhost:5000/docs` and log in at `POST /auth/login` as `admin` with the password `12345678`.
+Open `http://localhost:5000/api/docs` and log in at `POST /api/auth/login` as `admin` with the password `12345678`.
 
 ### 9. Commit your starting point
 
@@ -171,32 +171,32 @@ More detail on services, ports and connecting a database client is in [docs/loca
 
 ## API
 
-| Endpoint                         | Access         | What it does                                      |
-| -------------------------------- | -------------- | ------------------------------------------------- |
-| `POST /auth/register`            | Public         | Create a `USER` account and log in                |
-| `POST /auth/login`               | Public         | Log in with username or email                     |
-| `POST /auth/refresh`             | Refresh cookie | Get a new access token; rotates the refresh token |
-| `POST /auth/logout`              | Refresh cookie | Revoke the refresh token and clear the cookie     |
-| `GET /auth/me`                   | Logged in      | The current user, with `emailVerified`            |
-| `POST /auth/verify-email`        | Public         | Verify the email with the token from the link     |
-| `POST /auth/resend-verification` | Logged in      | Send a new verify link (5 per 15 minutes)         |
-| `POST /auth/forgot-password`     | Public         | Email a reset link (5 per 15 minutes)             |
-| `POST /auth/reset-password`      | Public         | Set a new password and log out every session      |
-| `PATCH /profile`                 | Logged in      | Change your user name and email                   |
-| `PATCH /profile/password`        | Logged in      | Change your password; other sessions log out      |
-| `GET /users`                     | Super admin    | List users, with search, role and status filters  |
-| `GET /users/:uid`                | Super admin    | One user                                          |
-| `PATCH /users/deactivate/:uid`   | Super admin    | Deactivate a user and revoke their sessions       |
-| `DELETE /users/:uid`             | Super admin    | Delete a user and revoke their sessions           |
-| `GET /teams`                     | Super admin    | List teams, optionally for one department         |
-| `GET /employees`                 | Super admin    | List employees, with search and filters           |
-| `GET /employees/:uid`            | Super admin    | One employee                                      |
-| `POST /employees`                | Super admin    | Create an employee and their login                |
-| `PATCH /employees/:uid`          | Super admin    | Update an employee                                |
-| `DELETE /employees/:uid`         | Super admin    | Delete an employee and their login                |
-| `GET /health`                    | Public         | Health check                                      |
+| Endpoint                             | Access         | What it does                                      |
+| ------------------------------------ | -------------- | ------------------------------------------------- |
+| `POST /api/auth/register`            | Public         | Create a `USER` account and log in                |
+| `POST /api/api/auth/login`           | Public         | Log in with username or email                     |
+| `POST /api/auth/refresh`             | Refresh cookie | Get a new access token; rotates the refresh token |
+| `POST /api/auth/logout`              | Refresh cookie | Revoke the refresh token and clear the cookie     |
+| `GET /api/auth/me`                   | Logged in      | The current user, with `emailVerified`            |
+| `POST /api/auth/verify-email`        | Public         | Verify the email with the token from the link     |
+| `POST /api/auth/resend-verification` | Logged in      | Send a new verify link (5 per 15 minutes)         |
+| `POST /api/auth/forgot-password`     | Public         | Email a reset link (5 per 15 minutes)             |
+| `POST /api/auth/reset-password`      | Public         | Set a new password and log out every session      |
+| `PATCH /api/profile`                 | Logged in      | Change your user name and email                   |
+| `PATCH /api/profile/password`        | Logged in      | Change your password; other sessions log out      |
+| `GET /api/users`                     | Super admin    | List users, with search, role and status filters  |
+| `GET /api/users/:uid`                | Super admin    | One user                                          |
+| `PATCH /api/users/deactivate/:uid`   | Super admin    | Deactivate a user and revoke their sessions       |
+| `DELETE /api/users/:uid`             | Super admin    | Delete a user and revoke their sessions           |
+| `GET /api/teams`                     | Super admin    | List teams, optionally for one department         |
+| `GET /api/employees`                 | Super admin    | List employees, with search and filters           |
+| `GET /api/employees/:uid`            | Super admin    | One employee                                      |
+| `POST /api/employees`                | Super admin    | Create an employee and their login                |
+| `PATCH /api/employees/:uid`          | Super admin    | Update an employee                                |
+| `DELETE /api/employees/:uid`         | Super admin    | Delete an employee and their login                |
+| `GET /api/health`                    | Public         | Health check                                      |
 
-Full request and response details are in Swagger at `/docs`.
+Every route starts with `/api`, so a reverse proxy can send `/api` to the API and everything else to the web app. Full request and response details are in Swagger at `/api/docs`.
 
 ## Project structure
 

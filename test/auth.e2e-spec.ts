@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
 import { configureApp } from './../src/app.setup.js';
 import { MailService } from '../src/infra/mail/mail.service.js';
@@ -74,7 +73,7 @@ function createFakePrisma() {
 }
 
 describe('Auth (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestExpressApplication;
 
   const credentials = {
     userName: 'Apu_Emdad',
@@ -97,7 +96,7 @@ describe('Auth (e2e)', () => {
       .useValue((fakeMail = new FakeMailService()))
       .compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.init();
   });
@@ -107,7 +106,7 @@ describe('Auth (e2e)', () => {
   });
 
   const register = () =>
-    request(app.getHttpServer()).post('/auth/register').send(credentials);
+    request(app.getHttpServer()).post('/api/auth/register').send(credentials);
 
   it('registers a user with lowercased username and email', async () => {
     const res = await register().expect(201);
@@ -132,13 +131,13 @@ describe('Auth (e2e)', () => {
       status: 409,
       message: 'Username is already taken',
       error: 'Conflict',
-      context: 'POST /auth/register',
+      context: 'POST /api/auth/register',
     });
   });
 
   it('rejects an invalid body with 400 and lists the problems', async () => {
     const res = await request(app.getHttpServer())
-      .post('/auth/register')
+      .post('/api/auth/register')
       .send({ userName: 'a@b', email: 'not-an-email', password: 'short' })
       .expect(400);
     expect(res.body.status).toBe(400);
@@ -153,7 +152,7 @@ describe('Auth (e2e)', () => {
 
     for (const userNameOrEmail of ['apu_emdad', 'APU@example.com']) {
       const res = await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ userNameOrEmail, password: credentials.password })
         .expect(200);
       expect(res.body.status).toBe(200);
@@ -165,7 +164,7 @@ describe('Auth (e2e)', () => {
     await register().expect(201);
 
     await request(app.getHttpServer())
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({ userNameOrEmail: 'apu_emdad', password: 'wrong-password' })
       .expect(401);
   });
@@ -173,14 +172,14 @@ describe('Auth (e2e)', () => {
   it('GET /auth/me needs a valid token', async () => {
     const { body } = await register().expect(201);
 
-    await request(app.getHttpServer()).get('/auth/me').expect(401);
+    await request(app.getHttpServer()).get('/api/auth/me').expect(401);
     await request(app.getHttpServer())
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', 'Bearer not-a-real-token')
       .expect(401);
 
     const res = await request(app.getHttpServer())
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', `Bearer ${body.data.accessToken}`)
       .expect(200);
     expect(res.body.data.userName).toBe('apu_emdad');
@@ -195,38 +194,38 @@ describe('Auth (e2e)', () => {
     fakePrisma.users[0].isActive = false;
 
     await request(app.getHttpServer())
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', `Bearer ${token}`)
       .expect(403);
     await request(app.getHttpServer())
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({
         userNameOrEmail: credentials.userName,
         password: credentials.password,
       })
       .expect(403);
     await request(app.getHttpServer())
-      .post('/auth/refresh')
+      .post('/api/auth/refresh')
       .set('Cookie', cookie)
       .expect(403);
     // Public routes still work; the token is just ignored.
     await request(app.getHttpServer())
-      .get('/health')
+      .get('/api/health')
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
   });
 
   it('public routes ignore the token, even an invalid one', async () => {
-    await request(app.getHttpServer()).get('/health').expect(200);
+    await request(app.getHttpServer()).get('/api/health').expect(200);
     await request(app.getHttpServer())
-      .get('/health')
+      .get('/api/health')
       .set('Authorization', 'Bearer not-a-real-token')
       .expect(200);
   });
 
   it('sends unexpected errors as a 500 Result with the generic message', async () => {
     const res = await request(app.getHttpServer())
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({ userNameOrEmail: 'db_down', password: 'whatever-123' })
       .expect(500);
 
@@ -234,7 +233,7 @@ describe('Auth (e2e)', () => {
       status: 500,
       message: 'An error occurred',
       error: 'database is down',
-      context: 'POST /auth/login',
+      context: 'POST /api/auth/login',
     });
   });
 
@@ -248,14 +247,14 @@ describe('Auth (e2e)', () => {
 
   describe('refresh tokens', () => {
     const refresh = (cookie?: string) => {
-      const req = request(app.getHttpServer()).post('/auth/refresh');
+      const req = request(app.getHttpServer()).post('/api/auth/refresh');
       return cookie ? req.set('Cookie', cookie) : req;
     };
 
     it('login sets an httpOnly refresh cookie and keeps the token out of the body', async () => {
       await register().expect(201);
       const res = await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ userNameOrEmail: 'apu_emdad', password: credentials.password })
         .expect(200);
 
@@ -263,7 +262,7 @@ describe('Auth (e2e)', () => {
         c.startsWith('refresh_token='),
       );
       expect(raw).toMatch(/HttpOnly/);
-      expect(raw).toMatch(/Path=\/auth/);
+      expect(raw).toMatch(/Path=\/api\/auth/);
       expect(raw).toMatch(/SameSite=Strict/);
       expect(res.body.data.refreshToken).toBeUndefined();
       expect(res.body.data.expiresIn).toBe(900);
@@ -282,7 +281,7 @@ describe('Auth (e2e)', () => {
       });
       expect(refreshCookieOf(res)).not.toBe(first);
       await request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Authorization', `Bearer ${res.body.data.accessToken}`)
         .expect(200);
     });
@@ -303,7 +302,7 @@ describe('Auth (e2e)', () => {
       const cookie = refreshCookieOf(await register().expect(201));
 
       const res = await request(app.getHttpServer())
-        .post('/auth/logout')
+        .post('/api/auth/logout')
         .set('Cookie', cookie)
         .expect(200);
 
@@ -315,7 +314,7 @@ describe('Auth (e2e)', () => {
       const cookie = refreshCookieOf(await register().expect(201));
 
       await request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Authorization', `Bearer ${cookie.split('=')[1]}`)
         .expect(401);
     });
@@ -324,7 +323,7 @@ describe('Auth (e2e)', () => {
   describe('email verification', () => {
     const me = (token: string) =>
       request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Authorization', `Bearer ${token}`);
 
     it('register sends a verify email and the link verifies the account once', async () => {
@@ -339,7 +338,7 @@ describe('Auth (e2e)', () => {
       const token = fakeMail.lastToken('verify-email');
 
       await request(app.getHttpServer())
-        .post('/auth/verify-email')
+        .post('/api/auth/verify-email')
         .send({ token })
         .expect(200);
       expect(
@@ -347,7 +346,7 @@ describe('Auth (e2e)', () => {
       ).toMatchObject({ emailVerified: true });
 
       const again = await request(app.getHttpServer())
-        .post('/auth/verify-email')
+        .post('/api/auth/verify-email')
         .send({ token })
         .expect(400);
       expect(again.body.message).toBe(
@@ -364,7 +363,7 @@ describe('Auth (e2e)', () => {
 
     it('rejects a malformed token with 400', async () => {
       await request(app.getHttpServer())
-        .post('/auth/verify-email')
+        .post('/api/auth/verify-email')
         .send({ token: 'not-a-token' })
         .expect(400);
     });
@@ -374,20 +373,20 @@ describe('Auth (e2e)', () => {
       const auth = `Bearer ${body.data.accessToken}`;
 
       await request(app.getHttpServer())
-        .post('/auth/resend-verification')
+        .post('/api/auth/resend-verification')
         .expect(401);
       await request(app.getHttpServer())
-        .post('/auth/resend-verification')
+        .post('/api/auth/resend-verification')
         .set('Authorization', auth)
         .expect(200);
       expect(fakeMail.sent).toHaveLength(2);
 
       await request(app.getHttpServer())
-        .post('/auth/verify-email')
+        .post('/api/auth/verify-email')
         .send({ token: fakeMail.lastToken('verify-email') })
         .expect(200);
       const res = await request(app.getHttpServer())
-        .post('/auth/resend-verification')
+        .post('/api/auth/resend-verification')
         .set('Authorization', auth)
         .expect(409);
       expect(res.body.message).toBe('Email is already verified');
@@ -397,7 +396,7 @@ describe('Auth (e2e)', () => {
   describe('forgot and reset password', () => {
     const forgot = (email: string) =>
       request(app.getHttpServer())
-        .post('/auth/forgot-password')
+        .post('/api/auth/forgot-password')
         .send({ email });
 
     it('answers the same for a known and an unknown email', async () => {
@@ -417,14 +416,14 @@ describe('Auth (e2e)', () => {
       await forgot('apu@example.com').expect(200);
 
       await request(app.getHttpServer())
-        .post('/auth/reset-password')
+        .post('/api/auth/reset-password')
         .send({
           token: fakeMail.lastToken('reset-password'),
           password: 'short',
         })
         .expect(400);
       await request(app.getHttpServer())
-        .post('/auth/reset-password')
+        .post('/api/auth/reset-password')
         .send({
           token: fakeMail.lastToken('reset-password'),
           password: 'brand-new-password',
@@ -432,21 +431,21 @@ describe('Auth (e2e)', () => {
         .expect(200);
 
       await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .set('Cookie', cookie)
         .expect(401);
       await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ userNameOrEmail: 'apu_emdad', password: credentials.password })
         .expect(401);
       await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ userNameOrEmail: 'apu_emdad', password: 'brand-new-password' })
         .expect(200);
 
       // The link works once.
       await request(app.getHttpServer())
-        .post('/auth/reset-password')
+        .post('/api/auth/reset-password')
         .send({
           token: fakeMail.lastToken('reset-password'),
           password: 'another-password',
@@ -471,7 +470,7 @@ describe('Auth (e2e)', () => {
       fakePrisma.users[0].emailVerifiedAt = new Date();
 
       const res = await request(app.getHttpServer())
-        .patch('/profile')
+        .patch('/api/profile')
         .set('Authorization', `Bearer ${body.data.accessToken}`)
         .send({ userName: 'Apu_New', email: 'New@Example.com' })
         .expect(200);
@@ -489,13 +488,13 @@ describe('Auth (e2e)', () => {
 
     it('rejects a user name that someone else has with 409', async () => {
       await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send({ ...credentials, userName: 'taken', email: 'taken@example.com' })
         .expect(201);
       const { body } = await register().expect(201);
 
       const res = await request(app.getHttpServer())
-        .patch('/profile')
+        .patch('/api/profile')
         .set('Authorization', `Bearer ${body.data.accessToken}`)
         .send({ userName: 'taken', email: 'apu@example.com' })
         .expect(409);
@@ -508,7 +507,7 @@ describe('Auth (e2e)', () => {
       const auth = `Bearer ${first.body.data.accessToken}`;
 
       await request(app.getHttpServer())
-        .patch('/profile/password')
+        .patch('/api/profile/password')
         .set('Authorization', auth)
         .send({
           currentPassword: 'wrong-password',
@@ -517,7 +516,7 @@ describe('Auth (e2e)', () => {
         .expect(400);
 
       const res = await request(app.getHttpServer())
-        .patch('/profile/password')
+        .patch('/api/profile/password')
         .set('Authorization', auth)
         .send({
           currentPassword: credentials.password,
@@ -527,17 +526,17 @@ describe('Auth (e2e)', () => {
       expect(res.body.data.accessToken).toEqual(expect.any(String));
 
       await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .set('Cookie', refreshCookieOf(res))
         .expect(200);
       await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .set('Cookie', otherCookie)
         .expect(401);
     });
 
     it('needs a login', async () => {
-      await request(app.getHttpServer()).patch('/profile').expect(401);
+      await request(app.getHttpServer()).patch('/api/profile').expect(401);
     });
   });
 });

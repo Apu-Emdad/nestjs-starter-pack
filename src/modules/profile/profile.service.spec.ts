@@ -12,7 +12,7 @@ import { RateLimitService } from '../../infra/redis/rate-limit.service.js';
 import type { RedisService } from '../../infra/redis/redis.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { EmailTokenService } from '../auth/email-token.service.js';
-import { TokenService } from '../auth/token.service.js';
+import { TokenService } from '../../infra/token/token.service.js';
 import { ProfileService } from './profile.service.js';
 
 const env: Record<string, unknown> = {

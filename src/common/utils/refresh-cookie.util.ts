@@ -1,5 +1,5 @@
 import type { CookieOptions, Response } from 'express';
-import { API_PREFIX } from '../../common/constants/api.js';
+import { API_PREFIX } from '../constants/api.js';
 
 export const REFRESH_COOKIE = 'refresh_token';
 

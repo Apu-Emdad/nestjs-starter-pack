@@ -10,10 +10,16 @@ import {
 import * as argon2 from 'argon2';
 import { ROLE } from '../../common/constants/roles.js';
 import type { Result } from '../../common/interfaces/result.interface.js';
+import {
+  toSafeUser,
+  type UserWithRole,
+} from '../../common/utils/safe-user.util.js';
 import { EmailTokenType } from '../../generated/prisma/enums.js';
 import { PrismaService } from '../../infra/prisma/prisma.service.js';
 import { RateLimitService } from '../../infra/redis/rate-limit.service.js';
-import type { AuthResult, AuthUser, JwtPayload } from './auth.types.js';
+import { TokenService } from '../../infra/token/token.service.js';
+import type { JwtPayload } from '../../infra/token/token.types.js';
+import type { AuthResult, AuthUser } from './auth.types.js';
 import {
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -22,8 +28,6 @@ import {
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { EmailTokenService } from './email-token.service.js';
-import { toSafeUser, type UserWithRole } from './safe-user.js';
-import { TokenService } from './token.service.js';
 
 // Emails a user can ask for: 5 per 15 minutes, per email and per IP.
 const EMAIL_RATE_LIMIT = { limit: 5, windowSeconds: 15 * 60 };

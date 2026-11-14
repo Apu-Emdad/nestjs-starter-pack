@@ -5,7 +5,7 @@ import type { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { Env } from '../../config/env.js';
 import type { AuthUser } from '../auth/auth.types.js';
-import { setRefreshCookie } from '../auth/refresh-cookie.js';
+import { setRefreshCookie } from '../../common/utils/refresh-cookie.util.js';
 import { ChangePasswordDto, UpdateProfileDto } from './profile.dto.js';
 import { ProfileService } from './profile.service.js';
 

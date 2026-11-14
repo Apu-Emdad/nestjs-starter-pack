@@ -12,8 +12,8 @@ import { PrismaService } from '../../infra/prisma/prisma.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import type { AuthResult, AuthUser } from '../auth/auth.types.js';
 import { EmailTokenService } from '../auth/email-token.service.js';
-import { toSafeUser } from '../auth/safe-user.js';
-import { TokenService } from '../auth/token.service.js';
+import { toSafeUser } from '../../common/utils/safe-user.util.js';
+import { TokenService } from '../../infra/token/token.service.js';
 import { ChangePasswordDto, UpdateProfileDto } from './profile.dto.js';
 
 @Injectable()

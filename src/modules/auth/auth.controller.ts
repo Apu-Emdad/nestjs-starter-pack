@@ -18,7 +18,7 @@ import {
   REFRESH_COOKIE,
   refreshCookieOptions,
   setRefreshCookie,
-} from './refresh-cookie.js';
+} from '../../common/utils/refresh-cookie.util.js';
 
 @ApiTags('Auth')
 @Controller('auth')

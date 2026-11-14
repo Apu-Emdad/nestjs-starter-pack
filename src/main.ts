@@ -7,7 +7,7 @@ import { AppModule } from './app.module.js';
 import { configureApp } from './app.setup.js';
 import { API_PREFIX } from './common/constants/api.js';
 import type { Env } from './config/env.js';
-import { REFRESH_COOKIE } from './modules/auth/refresh-cookie.js';
+import { REFRESH_COOKIE } from './common/utils/refresh-cookie.util.js';
 import { SWAGGER_CUSTOM_CSS, SWAGGER_CUSTOM_JS } from './swagger/swagger-ui.js';
 
 const DOCS_PATH = `${API_PREFIX}/docs`;

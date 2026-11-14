@@ -9,9 +9,10 @@ import { HealthController } from './health/health.controller.js';
 import { MailModule } from './infra/mail/mail.module.js';
 import { PrismaModule } from './infra/prisma/prisma.module.js';
 import { RedisModule } from './infra/redis/redis.module.js';
-import { AuthGuard } from './modules/auth/auth.guard.js';
+import { TokenModule } from './infra/token/token.module.js';
+import { AuthGuard } from './common/guards/auth.guard.js';
 import { AuthModule } from './modules/auth/auth.module.js';
-import { RolesGuard } from './modules/auth/roles.guard.js';
+import { RolesGuard } from './common/guards/roles.guard.js';
 import { EmployeesModule } from './modules/employees/employees.module.js';
 import { ProfileModule } from './modules/profile/profile.module.js';
 import { TeamsModule } from './modules/teams/teams.module.js';
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module.js';
     PrismaModule,
     RedisModule,
     MailModule,
+    TokenModule,
     ErrorLoggerModule,
     AuthModule,
     UsersModule,

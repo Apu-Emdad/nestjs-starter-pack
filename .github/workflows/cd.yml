@@ -1,0 +1,68 @@
+# =============================================================================
+# CD PIPELINE: deploy to EC2
+# Runs after the CI workflow passes on main, or by hand from the Actions tab.
+# Needs the repo variable DEPLOY_ENABLED=true and the secrets EC2_HOST,
+# EC2_USER, EC2_SSH_KEY and EC2_KNOWN_HOSTS. Copies of the starter skip it.
+# =============================================================================
+
+name: CD
+
+# -----------------------------------------------------------------------------
+# WHEN does this workflow run?
+# -----------------------------------------------------------------------------
+on:
+  workflow_run:
+    workflows: [CI] # the "name:" of ci.yml
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: # "Run workflow" button for a manual deploy
+
+# -----------------------------------------------------------------------------
+# Only one deploy at a time. A second one waits for the first to finish.
+# -----------------------------------------------------------------------------
+concurrency:
+  group: CD
+  cancel-in-progress: false
+
+jobs:
+  # ===========================================================================
+  # JOB: DEPLOY
+  # SSH into EC2, pull main, rebuild and restart the containers.
+  # ===========================================================================
+  deploy:
+    name: Deploy to EC2
+    # CI passed on a push to main (not a PR), or a manual run from main;
+    # and deploys are turned on in this repo
+    if: >-
+      vars.DEPLOY_ENABLED == 'true' &&
+      ((github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # the image build on t3.micro takes 5-15 minutes
+
+    steps:
+      # --- Prepare SSH -------------------------------------------------------
+      # Secrets go in through env, so their content can't change the script.
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # --- Deploy ------------------------------------------------------------
+      # Same commands as a manual deploy, then wait until the new app answers.
+      - name: Deploy
+        env:
+          TARGET: ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$TARGET" '
+            set -e
+            cd ~/apps/nestjs-starter-pack
+            git pull --ff-only
+            docker compose up -d --build
+            curl -fsS --retry 20 --retry-delay 5 --retry-all-errors localhost:5000/api/health
+          '

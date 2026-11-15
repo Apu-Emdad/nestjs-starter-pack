@@ -1,7 +1,7 @@
 # =============================================================================
-# CI PIPELINE: lint, typecheck, test, build, then deploy
-# Runs on every PR and every push to main. Deploys to EC2 only on a push to main,
-# and only in repos that set the DEPLOY_ENABLED variable.
+# CI PIPELINE: lint, typecheck, test, build
+# Runs on every PR and every push to main. Nothing is deployed here;
+# cd.yml deploys after this workflow passes on main.
 # =============================================================================
 
 name: CI
@@ -73,43 +73,3 @@ jobs:
 
       - name: Build
         run: yarn build
-
-  # ===========================================================================
-  # JOB: DEPLOY
-  # SSH into EC2, pull main, rebuild and restart the containers.
-  # Needs the repo variable DEPLOY_ENABLED=true and the secrets EC2_HOST,
-  # EC2_USER, EC2_SSH_KEY and EC2_KNOWN_HOSTS.
-  # ===========================================================================
-  deploy:
-    name: Deploy to EC2
-    needs: check # runs only if the quality gate passed
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30 # the image build on t3.micro takes 5-15 minutes
-
-    steps:
-      # --- Prepare SSH -------------------------------------------------------
-      # Secrets go in through env, so their content can't change the script.
-      - name: Set up SSH
-        env:
-          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-
-      # --- Deploy ------------------------------------------------------------
-      # Same commands as a manual deploy, then wait until the new app answers.
-      - name: Deploy
-        env:
-          TARGET: ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}
-        run: |
-          ssh -i ~/.ssh/deploy_key "$TARGET" '
-            set -e
-            cd ~/apps/nestjs-starter-pack
-            git pull --ff-only
-            docker compose up -d --build
-            curl -fsS --retry 20 --retry-delay 5 --retry-all-errors localhost:5000/api/health
-          '

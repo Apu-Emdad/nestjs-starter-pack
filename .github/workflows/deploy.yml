@@ -5,7 +5,7 @@
 # EC2_USER, EC2_SSH_KEY and EC2_KNOWN_HOSTS. Copies of the starter skip it.
 # =============================================================================
 
-name: CD
+name: Deployment
 
 # -----------------------------------------------------------------------------
 # WHEN does this workflow run?

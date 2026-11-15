@@ -11,10 +11,10 @@ export function configureApp(app: NestExpressApplication): void {
 
   app.setGlobalPrefix(API_PREFIX);
   /**
-   * Trust X-Forwarded-For only from a proxy on this machine (e.g. Nginx),
-   * so req.ip is the visitor's IP instead of 127.0.0.1.
+   * Trust X-Forwarded-For only from a proxy on this machine or a private network
+   * (e.g. Nginx on the host while the app runs in Docker), so req.ip is the visitor's IP.
    */
-  app.set('trust proxy', 'loopback');
+  app.set('trust proxy', ['loopback', 'uniquelocal']);
   app.use(cookieParser());
   // credentials: true lets the web app send and receive the refresh cookie.
   app.enableCors({
